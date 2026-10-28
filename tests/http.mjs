@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+const base='http://127.0.0.1:5173';
+const login=await fetch(base+'/signin-with-chatgpt?return_to=/',{redirect:'manual'});
+const cookie=login.headers.getSetCookie().map(c=>c.split(';')[0]).join('; ');
+assert.ok(cookie,'Local development sign-in must set cookie');
+const unauth=await fetch(base+'/api/crm?demo=1');assert.equal(unauth.status,401);
+const request=async(path,opts={})=>fetch(base+path,{...opts,headers:{Cookie:cookie,...opts.headers}});
+const initial=await (await request('/api/crm?demo=1')).json();assert.ok(initial.state.deals.length>0);
+const denied=await request('/api/crm?demo=1',{method:'POST',headers:{Origin:'https://untrusted.invalid','Content-Type':'application/json'},body:JSON.stringify({type:'lead.note',payload:{dealId:initial.state.deals[0].id,text:'must not write'},revision:initial.revision})});assert.ok([400,403].includes(denied.status));
+const body={type:'lead.note',payload:{dealId:initial.state.deals[0].id,text:'Teste automatizado de persistência e concorrência'},revision:initial.revision};
+const first=await request('/api/crm?demo=1',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(first.status,200);const saved=await first.json();
+const repeated=await request('/api/crm?demo=1',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify(body)});assert.equal(repeated.status,409);
+const loaded=await (await request('/api/crm?demo=1')).json();assert.equal(loaded.revision,saved.revision);assert.equal(loaded.state.deals[0].history[0].text,body.payload.text);
+const form=new FormData();form.set('dealId',loaded.state.deals[0].id);form.set('file',new File(['Nexo CRM: arquivo de teste de armazenamento.'],'teste-armazenamento.txt',{type:'text/plain'}));
+const upload=await request('/api/files?demo=1',{method:'POST',headers:{Origin:base},body:form});assert.equal(upload.status,200);const result=await upload.json(),attachment=result.state.deals[0].attachments.at(-1);assert.ok(attachment.id);
+const file=await request('/api/files?demo=1&id='+attachment.id);assert.equal(file.status,200);assert.match(await file.text(),/Nexo CRM/);assert.match(file.headers.get('content-disposition'),/attachment/);
+const inactive=await request('/api/integrations/events',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(inactive.status,503);
+console.log('PASS: identity, same-origin enforcement, persistence, optimistic concurrency, R2 upload/download and disabled external events.');
