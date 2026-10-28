@@ -39,7 +39,7 @@ test('cargo de administrador nunca ultrapassa as operações explicitamente libe
 test('novos projetos pertencem só ao dono até concessão explícita; migração antiga falha fechada',()=>{
  let s=upgradeState(demoState(user),'owner');const before=[...s.members[1].projects!];s=apply(s,'project.add',{name:'Operação privada'});
  assert.deepEqual(s.members[1].projects,before);assert.ok(s.members[0].projects?.includes('Operação privada'));assert.equal(s.funnels.filter(f=>f.project==='Operação privada').length,6);
- const old=structuredClone(s);delete old.members[1].projects;const upgraded=upgradeState(old,'owner');assert.deepEqual(upgraded.members[1].projects,[]);assert.equal(visibleState(upgraded,actor).members.length,upgraded.members.length);
+ const old=structuredClone(s);delete old.members[1].projects;const upgraded=upgradeState(old,'owner');assert.deepEqual(upgraded.members[1].projects,[]);assert.equal(visibleState(upgraded,actor).members.length,upgraded.members.length);const revoked=apply(upgraded,'member.save',{...upgraded.members[1],projects:[],active:false});assert.equal(revoked.members[1].active,false);
  assert.throws(()=>apply(s,'member.save',{...s.members[1],projects:['Inexistente']}),/Operação inválida/);
  s=apply(s,'member.save',{...s.members[1],projects:['Operação privada']});assert.deepEqual(s.members[1].projects,['Operação privada']);
 });
