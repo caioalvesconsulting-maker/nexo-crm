@@ -95,7 +95,7 @@ export function visibleState(s:State,a:Actor):State {
   data.contacts=data.contacts.filter(c=>contacts.has(c.id));data.tasks=data.tasks.filter(t=>allowed.has(t.project||'')&&(ids.has(t.dealId)||(!t.dealId&&(a.isOwner||a.allLeads||t.ownerId===a.id))));data.meetings=data.meetings.filter(m=>ids.has(m.dealId));data.messages=data.messages.filter(m=>ids.has(m.dealId));
   data.fees=data.fees.filter(f=>allowed.has(f.project||''));if(!a.finance&&!a.isOwner){data.sales=[];data.fees=[];}else data.sales=data.sales.filter(x=>ids.has(x.dealId));
   data.rules=data.rules.filter(r=>allowed.has(r.project||''));data.funnels=data.funnels.filter(f=>allowed.has(f.project));data.experiments=data.experiments.filter(e=>allowed.has(e.project));data.feedback=data.feedback.filter(f=>ids.has(f.dealId));
-  data.members=data.members.filter(m=>m.id===s.ownerId||m.id===a.id||(m.projects||[]).some(p=>allowed.has(p))).map(m=>({...m,projects:(m.projects||[]).filter(p=>allowed.has(p))}));
+  data.members=data.members.filter(m=>a.isOwner||m.id===s.ownerId||m.id===a.id||(m.projects||[]).some(p=>allowed.has(p))).map(m=>({...m,projects:(m.projects||[]).filter(p=>allowed.has(p))}));
   data.integrations=Object.fromEntries(Object.entries(data.integrations).filter(([,v])=>allowed.has(v.project||'')));
   if(!a.isOwner){data.audit=[];data.logs=data.logs.filter(x=>ids.has(x.dealId));data.inboundIds=[];}
   return data;
