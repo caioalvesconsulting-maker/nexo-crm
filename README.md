@@ -2,6 +2,25 @@
 
 CRM em português do Brasil, com tema escuro/claro, pipeline arrastável e registros persistentes em Cloudflare D1. Arquivos ficam no R2; preferências de tema e ambiente ficam apenas no navegador.
 
+## Baixar e rodar no computador
+
+No GitHub, use **Code → Download ZIP**, extraia a pasta e abra um terminal nela. Também é possível clonar o repositório com Git. É necessário Node.js 22.13 ou superior, com npm.
+
+Na primeira instalação:
+
+```sh
+npm run install:ci
+npm run build
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_brief_reptil.sql
+npm run dev -- --hostname 127.0.0.1
+```
+
+Abra `http://127.0.0.1:5173` e use **Entrar no meu CRM**. O login local é simulado para desenvolvimento. O comando SQL acima inicializa um banco local vazio; não o repita em um banco já inicializado. Nas próximas vezes, basta executar `npm run dev -- --hostname 127.0.0.1`.
+
+O download contém código, testes, configuração e exemplos fictícios. Não inclui os registros do CRM publicado, anexos de clientes, credenciais ou dependências instaladas. Os dados criados localmente ficam em `.wrangler/`, fora do Git. Para verificar o código, execute `npm run typecheck` e `npm test`.
+
+Este projeto foi preparado para a hospedagem Sites com Cloudflare D1/R2. Hospedar em outro serviço exige configurar banco, armazenamento e autenticação confiável no servidor. O login de produção depende dos cabeçalhos autenticados fornecidos pela hospedagem; eles não devem ser aceitos diretamente de visitantes em uma instalação independente. A publicação no GitHub não conecta automaticamente Instagram, WhatsApp ou os demais serviços.
+
 ## O que funciona
 
 - Dashboard calculado por período, projeto, responsável, origem, SDR e closer; receita, recebimentos, taxas, caixa líquido e gráficos.
