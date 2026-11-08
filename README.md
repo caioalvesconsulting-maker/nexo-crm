@@ -41,6 +41,8 @@ Este projeto foi preparado para a hospedagem Sites com Cloudflare D1/R2. Hospeda
 
 ## Ativação externa pendente
 
+O Instagram possui agora um adaptador de recebimento oficial com verificação da assinatura Meta, prevenção de duplicidade, roteamento por conta/operação e painel de status. **Ainda não está conectado**: faltam a autorização da conta, configuração do aplicativo Meta, segredos e publicação do gateway HTTPS separado. Consulte [ativação do Instagram](docs/instagram-activation.md). O envio de mensagens continua desativado. Nenhum segredo de produção foi configurado nesta preparação.
+
 Instagram, WhatsApp, TikTok, e-mail e Google Agenda não estão conectados. Os formulários de Integrações guardam somente a identificação da conta e observações. A interface declara o estado pendente e impede envio real. O teste de conversa é local ao ambiente demonstrativo; na operação real, é possível salvar rascunhos e notas.
 
 Para receber eventos reais, configure um adaptador oficial do provedor que valide a assinatura original, normalize o evento e envie à rota `POST /api/integrations/events`. O corpo é JSON:
@@ -94,6 +96,6 @@ Arquivos de até 10 MB são armazenados no R2, com acesso autenticado e download
 ## Verificações realizadas
 
 - Compilação TypeScript e build de produção.
-- 19 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes e entrada de mensagens.
+- 30 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes, gráficos, métricas e assinatura/roteamento/deduplicação do adaptador Instagram.
 - Testes HTTP locais: autenticação, origem, persistência, concorrência, R2 e integração inativa.
 - Teste visual no navegador: cadastro, arrastar card, venda ganha, recebimento parcial, seleção de operação, criação de experimento, atribuição automática e registro de abordagem/consciência.

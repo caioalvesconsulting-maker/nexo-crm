@@ -41,3 +41,18 @@
 .sidebar{backdrop-filter:none}
 @media(max-width:1400px) and (min-width:1101px){.project-distribution{flex-direction:row;gap:18px;padding:28px 22px;min-height:285px}.project-ring{width:170px;height:170px;min-width:170px}.project-ring-center{inset:20px}.project-ring-center strong{font-size:15px}.project-ring-center small{font-size:6px}.project-legend{width:auto;align-self:stretch}.project-legend td strong{font-size:10px}.project-legend-name{font-size:10px}}
 @media(min-width:761px) and (max-width:900px){.overview-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.overview-summary .metric:last-child{grid-column:1/-1}}
+/* Official Instagram onboarding: visible readiness, never a simulated connection. */
+.instagram-connection{padding:28px;margin-bottom:24px}
+.instagram-connection-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.instagram-connection-heading h3{margin:6px 0;font-size:22px}
+.instagram-connection-heading p,.instagram-intro{color:var(--muted);font-size:13px;line-height:1.7}
+.instagram-connection-heading .channel-logo{color:#dd7eb6;background:#dd7eb615;flex-shrink:0}
+.instagram-intro{margin:20px 0}
+.instagram-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.instagram-steps>div{padding:18px;border:1px solid var(--line);border-radius:14px;background:rgba(117,139,224,.04)}
+.instagram-steps b{font-size:13px}.instagram-steps p{font-size:12px;line-height:1.7;color:var(--muted);margin:8px 0 0}
+.instagram-connection-status{display:flex;gap:10px;align-items:flex-start;padding:18px 0;font-size:12px;line-height:1.7}
+.instagram-connection-status>svg{flex-shrink:0;margin-top:2px;color:#8c9ef6}
+.instagram-connection-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.instagram-connection-actions>span{font-size:11px;color:var(--muted)}
+@media(max-width:760px){.instagram-connection{padding:20px}.instagram-connection-heading{flex-direction:column}.instagram-connection-heading h3{font-size:19px}.instagram-steps{grid-template-columns:1fr}.instagram-connection-actions>.btn{width:100%;justify-content:center}}

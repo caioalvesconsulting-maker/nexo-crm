@@ -1,0 +1,7 @@
+{
+  "name": "nexo-instagram-gateway",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-08",
+  "workers_dev": true,
+  "observability": {"enabled": false}
+}

@@ -15,4 +15,8 @@ const form=new FormData();form.set('dealId',loaded.state.deals[0].id);form.set('
 const upload=await request('/api/files?demo=1',{method:'POST',headers:{Origin:base},body:form});assert.equal(upload.status,200);const result=await upload.json(),attachment=result.state.deals[0].attachments.at(-1);assert.ok(attachment.id);
 const file=await request('/api/files?demo=1&id='+attachment.id);assert.equal(file.status,200);assert.match(await file.text(),/Nexo CRM/);assert.match(file.headers.get('content-disposition'),/attachment/);
 const inactive=await request('/api/integrations/events',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});assert.equal(inactive.status,503);
-console.log('PASS: identity, same-origin enforcement, persistence, optimistic concurrency, R2 upload/download and disabled external events.');
+const igStatus=await request('/api/integrations/instagram/status?demo=1&project='+encodeURIComponent(initial.state.projects[0]));assert.equal(igStatus.status,200);assert.deepEqual(await igStatus.json(),{mode:'demo',configured:false,receiving:false,lastWebhookAt:null});
+assert.equal((await fetch(base+'/api/integrations/instagram/status?demo=1')).status,401);
+assert.equal((await request('/api/integrations/instagram/status?demo=1&project=not-an-operation')).status,400);
+assert.equal((await request('/api/integrations/instagram/webhook',{method:'POST',body:'{}'})).status,503);
+console.log('PASS: identity, same-origin enforcement, persistence, optimistic concurrency, R2 upload/download, scoped Instagram status and disabled external events.');
