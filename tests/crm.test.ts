@@ -81,3 +81,17 @@ test('motivo de fechamento persiste no histórico e estorno preserva o registro'
  assert.ok(s.deals[0].history.some(h=>h.text.includes('Confiança no diagnóstico')));
  s=apply(s,'sale.status',{id:s.sales[0].id,status:'Cancelada',note:'Cliente desistiu'});assert.equal(s.sales[0].status,'Cancelada');
 });
+
+import {responseMetrics} from '../lib/response-metrics';
+test('taxa de resposta ignora notas, rascunhos, outros leads e separa canais',()=>{
+ const messages=[
+  {id:'1',dealId:'a',channel:'WhatsApp',at:'2026-11-08T10:00:00Z',direction:'in',status:'received',text:'Oi'},
+  {id:'2',dealId:'a',channel:'WhatsApp',at:'2026-11-08T10:02:00Z',direction:'out',status:'draft',text:'Rascunho'},
+  {id:'3',dealId:'a',channel:'WhatsApp',at:'2026-11-08T10:10:00Z',direction:'out',status:'demo',text:'Olá'},
+  {id:'4',dealId:'a',channel:'Instagram',at:'2026-11-08T10:15:00Z',direction:'in',status:'received',text:'Oi'},
+  {id:'5',dealId:'a',channel:'Instagram',at:'2026-11-08T10:16:00Z',direction:'note',status:'note',text:'Interna'},
+  {id:'6',dealId:'b',channel:'WhatsApp',at:'2026-11-08T10:20:00Z',direction:'in',status:'received',text:'Outro lead'},
+ ] as import('../lib/crm').Message[];
+ assert.deepEqual(responseMetrics(messages,new Set(['a'])),{total:2,answered:1,rate:50,medianMinutes:10});
+ assert.deepEqual(responseMetrics([],new Set()),{total:0,answered:0,rate:null,medianMinutes:null});
+});
