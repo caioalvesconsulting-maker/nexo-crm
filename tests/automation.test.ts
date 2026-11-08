@@ -3,11 +3,16 @@ import assert from 'node:assert/strict';
 import {emptyState} from '../lib/crm';
 import type {Actor,State} from '../lib/crm';
 import {mutateState} from '../lib/commands';
-import {runCloudAutomations} from '../lib/cloud-automations';
+import {runCloudAutomations,hasRequestContent} from '../lib/cloud-automations';
 import type {WorkspaceRow,AutomationStore} from '../lib/cloud-automations';
 import {SyncGuard} from '../lib/sync-guard';
 const actor:Actor={id:'owner',isOwner:true,projects:['Meu projeto'],name:'Caio',role:'Administrador',allLeads:true,finance:true,export:true};
 const apply=(s:State,type:string,payload={})=>mutateState(s,{type,payload},actor);
+test('POST vazio atravessa proxies com stream vazio e rejeita conteúdo no primeiro byte',async()=>{
+  assert.equal(await hasRequestContent(new Request('https://example.test',{method:'POST'})),false);
+  assert.equal(await hasRequestContent(new Request('https://example.test',{method:'POST',body:''})),false);
+  assert.equal(await hasRequestContent(new Request('https://example.test',{method:'POST',body:'{}'})),true);
+});
 function overdue(){const s=apply(emptyState({userId:'owner',displayName:'Caio',email:'owner@example.com'}),'lead.save',{name:'Lead de teste'});s.deals[0].updatedAt='2020-01-01T00:00:00Z';s.tasks[0].due='2020-01-02T00:00:00Z';s.logs=[];return s;}
 function memory(state=overdue()){
   let row:WorkspaceRow={owner_id:'owner',data:JSON.stringify(state),revision:0};

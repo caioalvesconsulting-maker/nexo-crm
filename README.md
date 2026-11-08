@@ -97,6 +97,6 @@ Arquivos de até 10 MB são armazenados no R2, com acesso autenticado e download
 ## Verificações realizadas
 
 - Compilação TypeScript e build de produção.
-- 38 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes, gráficos, métricas e assinatura/roteamento/deduplicação do adaptador Instagram.
+- 39 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes, gráficos, métricas e assinatura/roteamento/deduplicação do adaptador Instagram.
 - Testes HTTP locais: autenticação, origem, persistência, concorrência, R2 e integração inativa.
 - Teste visual no navegador: cadastro, arrastar card, venda ganha, recebimento parcial, seleção de operação, criação de experimento, atribuição automática e registro de abordagem/consciência.

@@ -1,7 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {getChatGPTUser} from '@/app/chatgpt-auth';
 import {json} from '@/lib/server';
-import {automationStore,runCloudAutomations} from '@/lib/cloud-automations';
+import {automationStore,runCloudAutomations,hasRequestContent} from '@/lib/cloud-automations';
 import type {State} from '@/lib/crm';
 export const dynamic='force-dynamic';
 
@@ -23,7 +23,7 @@ export async function POST(request:Request) {
     const access=await authorized(request);if(access.response)return access.response;
     if(new URL(request.url).search)return json({error:'A rotina usa apenas o ambiente real.'},400);
     // No parameters or lead data may be supplied by the cloud task.
-    if(request.body)return json({error:'Envie a solicitação sem conteúdo.'},400);
+    if(await hasRequestContent(request))return json({error:'Envie a solicitação sem conteúdo.'},400);
     return json(await runCloudAutomations(access.store!));
   } catch {return json({error:'Não foi possível concluir. Tente novamente; ações já salvas não serão duplicadas.'},503);}
 }

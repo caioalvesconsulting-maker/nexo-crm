@@ -8,6 +8,14 @@ export type AutomationStore = {
   write:(revision:number,state:State)=>Promise<boolean>;
 };
 
+// Proxies can forward an empty POST as a non-null, zero-byte stream.
+export async function hasRequestContent(request:Request) {
+  if(!request.body)return false;
+  const reader=request.body.getReader();
+  try {while(true){const part=await reader.read();if(part.done)return false;if(part.value.byteLength){await reader.cancel();return true;}}}
+  finally {reader.releaseLock();}
+}
+
 // Only the shared, real workspace is eligible. Callers cannot select a user,
 // project or demo workspace. CAS retries preserve concurrent team edits.
 export async function runCloudAutomations(store:AutomationStore) {
