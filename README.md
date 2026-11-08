@@ -35,7 +35,8 @@ Este projeto foi preparado para a hospedagem Sites com Cloudflare D1/R2. Hospeda
 - Origens separadas dos canais: YouTube, story com isca para página de vendas, story com formulário, networking, tráfego pago e entrada direta. Descrições de entrada, qualificação e próximo passo editáveis, além de um guia das seis etapas comerciais.
 - Testes A/B de SDR e closer, com sorteio 50/50 por lead elegível, versão estável, público por origem, pausa e métricas por lead. Atribuições manuais ficam fora da comparação aleatória; intervalos de Wilson mostram a incerteza.
 - Registro de abordagem/pitch, resultado, motivo e objeções. SDR informa ação de consciência, material e avaliação antes/depois. Concluir uma call exige registro de closer.
-- Automações imediatas ao cadastrar/mover um lead; verificação de prazos e SLAs quando o CRM é aberto e a cada minuto enquanto a aba está visível.
+- Automações imediatas ao cadastrar/mover um lead; verificação de prazos e SLAs ao abrir, a cada minuto enquanto a aba está visível e por rotina horária na nuvem quando ativada. A aba Automações mostra a última confirmação.
+- Sincronização da equipe a cada 15 segundos, com pausa durante formulários e arrastes; respostas antigas não sobrescrevem salvamentos ou trocas de ambiente.
 - Recepção de eventos normalizados com assinatura HMAC e deduplicação; mensagens entram no histórico e novos contatos vão para Leads em conversa.
 - Ambiente demonstrativo por usuário e workspace real separado. Dados de exemplo não contaminam a operação real.
 
@@ -61,7 +62,7 @@ Para receber eventos reais, configure um adaptador oficial do provedor que valid
 
 Canais aceitos: Instagram, WhatsApp, E-mail, TikTok e Site. Campos opcionais: name, phone, email, instagram e funnelId. project é obrigatório quando há mais de uma operação. Eventos e contatos são deduplicados dentro da operação, nunca entre operações. O adaptador assina os bytes exatos do JSON com HMAC-SHA256 usando `CRM_EVENT_SECRET` e envia o hexadecimal no cabeçalho `x-nexo-signature`. O segredo deve ser configurado como segredo de ambiente no Sites, nunca no frontend, repositório ou campo de observações. Sem segredo, a rota responde 503.
 
-O site permanece privado. Além da assinatura do CRM, um adaptador externo precisa de acesso de serviço autorizado pela plataforma de hospedagem; um webhook comum de provedor não atravessa a autenticação privada sozinho. A ativação de adaptadores, autorização das contas, envio externo, sincronização de calendário e agendamento independente do navegador permanecem pendentes. Não foi realizada nenhuma mensagem ou cobrança real.
+O site permanece privado. Além da assinatura do CRM, um adaptador externo precisa de acesso de serviço autorizado pela plataforma de hospedagem; um webhook comum de provedor não atravessa a autenticação privada sozinho. A ativação de adaptadores, autorização das contas, envio externo, sincronização de calendário permanecem pendentes. A rotina interna independente do navegador está descrita em [Automações na nuvem](docs/cloud-automations.md). Não foi realizada nenhuma mensagem ou cobrança real.
 
 O financeiro registra vendas e recebimentos; não emite boletos, QR Codes de Pix nem realiza cobrança ou estorno externo. Os percentuais são definidos pelo proprietário e podem ser editados livremente. WIN não significa recebido. O estorno atual é integral e preserva o histórico; estorno parcial ainda não é suportado.
 
@@ -96,6 +97,6 @@ Arquivos de até 10 MB são armazenados no R2, com acesso autenticado e download
 ## Verificações realizadas
 
 - Compilação TypeScript e build de produção.
-- 30 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes, gráficos, métricas e assinatura/roteamento/deduplicação do adaptador Instagram.
+- 38 testes de regras, incluindo isolamento por operação, migração de permissões, A/B, feedback e motivos de resultado, além de: cadastro, deduplicação de contatos, perda/follow-up, conflito de agenda, taxas históricas, pagamentos parciais, reabertura, permissões, envio bloqueado, automações idempotentes, gráficos, métricas e assinatura/roteamento/deduplicação do adaptador Instagram.
 - Testes HTTP locais: autenticação, origem, persistência, concorrência, R2 e integração inativa.
 - Teste visual no navegador: cadastro, arrastar card, venda ganha, recebimento parcial, seleção de operação, criação de experimento, atribuição automática e registro de abordagem/consciência.

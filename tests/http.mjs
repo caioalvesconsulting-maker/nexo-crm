@@ -19,4 +19,7 @@ const igStatus=await request('/api/integrations/instagram/status?demo=1&project=
 assert.equal((await fetch(base+'/api/integrations/instagram/status?demo=1')).status,401);
 assert.equal((await request('/api/integrations/instagram/status?demo=1&project=not-an-operation')).status,400);
 assert.equal((await request('/api/integrations/instagram/webhook',{method:'POST',body:'{}'})).status,503);
+assert.equal((await fetch(base+'/api/automations/status?demo=1')).status,401);
+const automationStatus=await (await request('/api/automations/status?demo=1')).json();assert.deepEqual(automationStatus,{mode:'demo',scheduled:false,lastRun:null});
+assert.equal((await request('/api/automations/cloud',{method:'POST'})).status,503);
 console.log('PASS: identity, same-origin enforcement, persistence, optimistic concurrency, R2 upload/download, scoped Instagram status and disabled external events.');

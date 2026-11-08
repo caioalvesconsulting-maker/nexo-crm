@@ -52,6 +52,7 @@ export function usePipelineDrag(
       window.removeEventListener('blur', cancel);
       if (element.hasPointerCapture(pointerId)) element.releasePointerCapture(pointerId);
       if (active) suppressClickUntil.current = performance.now() + 500;
+      if(board.current)delete board.current.dataset.dragging;
       setDragging(null);
       setOver(null);
       stopRef.current = null;
@@ -76,6 +77,7 @@ export function usePipelineDrag(
       if (!active && Math.hypot(x - startX, y - startY) < 6) return;
       if (!active) {
         active = true;
+        if(board.current)board.current.dataset.dragging='true';
         element.setPointerCapture(pointerId);
         frame = requestAnimationFrame(tick);
       }
