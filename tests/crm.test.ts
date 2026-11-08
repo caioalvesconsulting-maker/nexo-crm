@@ -95,3 +95,14 @@ test('taxa de resposta ignora notas, rascunhos, outros leads e separa canais',()
  assert.deepEqual(responseMetrics(messages,new Set(['a'])),{total:2,answered:1,rate:50,medianMinutes:10});
  assert.deepEqual(responseMetrics([],new Set()),{total:0,answered:0,rate:null,medianMinutes:null});
 });
+
+import {projectFinancials} from '../lib/project-financials';
+test('gráficos por projeto reconciliam receita e caixa sem confundir datas de venda e recebimento',()=>{
+ const s=demoState(user),a=s.sales[0],b=s.sales[1];
+ const deals=[{...s.deals.find(d=>d.id===a.dealId)!,project:'Projeto A'},{...s.deals.find(d=>d.id===b.dealId)!,project:'Projeto B'}];
+ const receipts=[{id:'r',gross:5000,fee:100,net:4900,at:'2026-11-08T12:00:00Z',note:''},{id:'old',gross:1000,fee:20,net:980,at:'2026-10-01T12:00:00Z',note:''}];
+ const sales=[{...a,amount:10000,createdAt:'2026-10-01T12:00:00Z',receipts},{...b,amount:20000,createdAt:'2026-11-08T12:00:00Z',receipts:[{...receipts[0],net:4700}]},{...b,id:'cancelled',status:'Cancelada' as const,receipts}];
+ assert.deepEqual(projectFinancials(['Projeto A','Projeto B'],deals,sales,at=>at.startsWith('2026-11-08')),[{name:'Projeto A',revenue:0,net:4900},{name:'Projeto B',revenue:20000,net:4700}]);
+ assert.deepEqual(projectFinancials(['Projeto A'],deals,sales,()=>true),[{name:'Projeto A',revenue:10000,net:5880}]);
+ assert.deepEqual(projectFinancials(['Projeto A'],deals,[],()=>true),[{name:'Projeto A',revenue:0,net:0}]);
+});

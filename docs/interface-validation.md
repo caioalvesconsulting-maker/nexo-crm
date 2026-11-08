@@ -26,3 +26,12 @@ Data: 08/11/2026.
 ## Limites
 
 Validação responsiva feita com tamanhos de viewport no navegador; não é teste em hardware móvel. A reprodução técnica de áudio foi validada no navegador. WhatsApp, Instagram e outros provedores continuam dependendo da configuração das integrações; métricas demonstrativas estão identificadas na interface.
+
+
+## Atualização da Visão geral — 08/11/2026
+
+- Cinco indicadores: receita total, ticket médio, caixa líquido recebido, leads cadastrados no período e conversão entre oportunidades encerradas. Formatação monetária em reais com duas casas e conversão com uma casa decimal.
+- Filtros de período, projeto, SDR e closer expostos no topo; intervalo personalizado com aplicação explícita. Atalhos Criar tarefa e Agendar chamada.
+- Gráficos de rosca de receita e caixa por projeto logo abaixo dos indicadores, com valores, participação e total. Projetos sem movimentação aparecem sem fatia; ausência completa de movimento apresenta anel neutro.
+- Receita usa a data da venda ativa. Caixa usa a data de cada recebimento confirmado, inclusive de vendas anteriores. Vendas canceladas não entram. Um teste adicional valida conciliação por projeto, recebimentos parciais e isolamento do projeto selecionado: 21 testes aprovados no total.
+- Testes de navegador: filtro por projeto, período personalizado sem registros, limpeza dos filtros e tamanhos de 320, 390, 768, 1024 e 1440 px. Valores da operação mantidos, sem números fictícios inseridos em dados reais.
