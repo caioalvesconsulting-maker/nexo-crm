@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./orbital.css";
+import "./growth.css";
 
 export const metadata: Metadata = {
   title: "Nexo CRM · Seu próximo negócio começa aqui",
