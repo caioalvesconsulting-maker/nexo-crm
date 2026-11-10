@@ -1,3 +1,5 @@
+import {canFollowup,canManageLearning} from './lifecycle';
+import type {Followup,Learning,OperationMap,AppNotice} from './lifecycle';
 export const STAGES = [
   { id: 'conversation', name: 'Leads em conversa', short: 'Em conversa', color: '#6695ff' },
   { id: 'booking', name: 'Marcando call', short: 'Marcando call', color: '#bc91ff' },
@@ -15,7 +17,7 @@ export type Feedback={id:string;project:string;dealId:string;meetingId?:string;a
 export const AWARENESS=['Não identificado','Não reconhece o problema','Reconhece o problema','Conhece soluções','Conhece a oferta','Pronto para decidir'];
 
 export type Stage = typeof STAGES[number]['id'];
-export type Role = 'Administrador' | 'Gestor' | 'SDR' | 'Closer';
+export type Role = 'Administrador' | 'Gestor' | 'SDR' | 'Closer' | 'Suporte/CS';
 export type Channel = 'Instagram' | 'WhatsApp' | 'E-mail' | 'TikTok' | 'Indicação' | 'Site';
 export type Member = { projects?: string[]; id: string; name: string; email: string; role: Role; active: boolean; allLeads: boolean; finance: boolean; export: boolean };
 export type Contact = { project?: string; id: string; name: string; company: string; email: string; phone: string; instagram: string; externalIds?: Record<string,string> };
@@ -23,7 +25,7 @@ export type Activity = { project?: string; id: string; at: string; actor: string
 export type Attachment = { id: string; name: string; size: number; type: string };
 export type Deal = { funnelId?: string; awareness?: string; wonAt?: string; experimentAssignments?: Assignment[]; id: string; contactId: string; stage: Stage; source: Channel; project: string; product: string; campaign: string; ownerId: string; sdrId: string; closerId: string; value: number; tags: string[]; notes: string; createdAt: string; updatedAt: string; followupAt?: string; lossReason?: string; history: Activity[]; attachments: Attachment[]; fields: Record<string,string> };
 export type SalesTeam = {id:string;project:string;name:string;description:string;memberIds:string[];active:boolean};
-export type Task = { description?:string; batchId?:string; completedAt?:string; project?: string; id: string; title: string; dealId: string; ownerId: string; due: string; priority: 'Alta' | 'Média' | 'Baixa'; done: boolean; createdAt: string; automationKey?: string; slaNotified?: Record<string,string> };
+export type Task = { followupId?:string; description?:string; batchId?:string; completedAt?:string; project?: string; id: string; title: string; dealId: string; ownerId: string; due: string; priority: 'Alta' | 'Média' | 'Baixa'; done: boolean; createdAt: string; automationKey?: string; slaNotified?: Record<string,string> };
 export type Meeting = { createdAt?: string; id: string; title: string; dealId: string; ownerId: string; start: string; duration: number; notes: string; status: 'Agendada' | 'Realizada' | 'Cancelada'; link: string };
 export type Fee = { project?: string; id: string; platform: string; method: 'Pix' | 'Boleto' | 'Cartão'; percent: number; fixed: number; installments: number; anticipation: number; days: number; effectiveAt: string; active: boolean };
 export type Receipt = { id: string; gross: number; fee: number; net: number; at: string; note: string };
@@ -31,7 +33,7 @@ export type Sale = { id: string; dealId: string; gross: number; discount: number
 export type Message = { id: string; dealId: string; channel: string; text: string; at: string; direction: 'in' | 'out' | 'note'; status: 'received' | 'demo' | 'note' | 'draft' };
 export type Rule = { project?: string; id: string; name: string; description: string; event: 'lead_created' | 'stage_changed' | 'sla' | 'no_reply'; stage: string; action: 'task' | 'followup'; hours: number; enabled: boolean; runs: number };
 export type AutomationLog = { id: string; at: string; ruleId: string; dealId: string; text: string };
-export type State = { teams:SalesTeam[]; cloudAutomation?: {id:string;at:string}; schemaVersion: number; ownerId: string; projectDetails: Record<string,ProjectDetails>; funnels: Funnel[]; experiments: Experiment[]; feedback: Feedback[]; inboundIds?: string[]; contacts: Contact[]; deals: Deal[]; tasks: Task[]; meetings: Meeting[]; sales: Sale[]; fees: Fee[]; members: Member[]; messages: Message[]; rules: Rule[]; logs: AutomationLog[]; projects: string[]; lossReasons: string[]; audit: Activity[]; settings: { name: string; timezone: string; workingStart: string; workingEnd: string; slaHours: number }; integrations: Record<string, { account: string; notes: string; project?: string; channel?: string; instagramAccountId?: string; lastWebhookAt?: string }> };
+export type State = { followups:Followup[]; learning:Learning; operationMaps:Record<string,OperationMap>; followupNotices:AppNotice[]; followupDaily:Record<string,string>; teams:SalesTeam[]; cloudAutomation?: {id:string;at:string}; schemaVersion: number; ownerId: string; projectDetails: Record<string,ProjectDetails>; funnels: Funnel[]; experiments: Experiment[]; feedback: Feedback[]; inboundIds?: string[]; contacts: Contact[]; deals: Deal[]; tasks: Task[]; meetings: Meeting[]; sales: Sale[]; fees: Fee[]; members: Member[]; messages: Message[]; rules: Rule[]; logs: AutomationLog[]; projects: string[]; lossReasons: string[]; audit: Activity[]; settings: { name: string; timezone: string; workingStart: string; workingEnd: string; slaHours: number }; integrations: Record<string, { account: string; notes: string; project?: string; channel?: string; instagramAccountId?: string; lastWebhookAt?: string }> };
 export type Actor = { isOwner: boolean; projects: string[]; id: string; name: string; role: Role; allLeads: boolean; finance: boolean; export: boolean };
 export const uid = () => crypto.randomUUID();
 export const money = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -52,7 +54,7 @@ export function estimate(amount: number, fee: Fee | null) {
 }
 export function emptyState(user: {userId:string; displayName:string; email:string}): State {
   return {
-    schemaVersion:2,teams:[],ownerId:user.userId,projectDetails:{},funnels:[],experiments:[],feedback:[],contacts:[], deals:[], tasks:[], meetings:[], sales:[], fees:[], messages:[], logs:[], audit:[],
+    schemaVersion:2,followups:[],learning:{tracks:[],lessons:[],progress:[],scripts:[],calls:[],onboarding:[],onboarded:[]},operationMaps:{},followupNotices:[],followupDaily:{},teams:[],ownerId:user.userId,projectDetails:{},funnels:[],experiments:[],feedback:[],contacts:[], deals:[], tasks:[], meetings:[], sales:[], fees:[], messages:[], logs:[], audit:[],
     members:[{ id:user.userId, name:user.displayName, email:user.email, role:'Administrador', active:true, allLeads:true, finance:true, export:true,projects:['Meu projeto'] }],
     projects:['Meu projeto'], lossReasons:['Preço', 'Momento inadequado', 'Sem resposta', 'Concorrente', 'Falta de interesse', 'Outro'],
     settings:{ name:'Meu workspace', timezone:'America/Sao_Paulo', workingStart:'09:00', workingEnd:'18:00', slaHours:4 }, integrations:{},
@@ -98,6 +100,12 @@ export function visibleState(s:State,a:Actor):State {
   data.rules=data.rules.filter(r=>allowed.has(r.project||''));data.funnels=data.funnels.filter(f=>allowed.has(f.project));data.experiments=data.experiments.filter(e=>allowed.has(e.project));data.feedback=data.feedback.filter(f=>ids.has(f.dealId));
   data.members=data.members.filter(m=>a.isOwner||m.id===s.ownerId||m.id===a.id||(m.projects||[]).some(p=>allowed.has(p))).map(m=>({...m,projects:(m.projects||[]).filter(p=>allowed.has(p))}));
   data.teams=(data.teams||[]).filter(t=>allowed.has(t.project)).map(t=>({...t,memberIds:t.memberIds.filter(id=>data.members.some(m=>m.id===id&&m.active&&(m.id===s.ownerId||m.projects?.includes(t.project))))}));
+  data.followups=data.followups.filter(f=>canFollowup(f,a));const followupIds=new Set(data.followups.map(f=>f.id));
+  for(const key of ['tracks','lessons','scripts','calls','onboarding'] as const)data.learning[key]=(data.learning[key] as any[]).filter(x=>allowed.has(x.project)) as any;
+  if(!canManageLearning(a))data.learning.lessons=data.learning.lessons.filter(l=>l.published).map(l=>({...l,questions:l.questions.map(q=>({id:q.id,question:q.question,options:q.options}))}));
+  data.learning.progress=data.learning.progress.filter(p=>allowed.has(p.project)&&(canManageLearning(a)||p.memberId===a.id));data.learning.onboarded=data.learning.onboarded.filter(p=>allowed.has(p.project)&&(canManageLearning(a)||p.memberId===a.id));
+  data.operationMaps=Object.fromEntries(Object.entries(data.operationMaps).filter(([p])=>allowed.has(p)));
+  data.followupNotices=data.followupNotices.filter(n=>allowed.has(n.project)&&n.ownerId===a.id).map(n=>({...n,leadIds:n.leadIds.filter(id=>followupIds.has(id))}));data.followupDaily=Object.fromEntries(Object.entries(data.followupDaily).filter(([p])=>allowed.has(p)));
   data.integrations=Object.fromEntries(Object.entries(data.integrations).filter(([,v])=>allowed.has(v.project||'')));
   if(!a.isOwner){data.audit=[];data.logs=data.logs.filter(x=>ids.has(x.dealId));data.inboundIds=[];}
   return data;

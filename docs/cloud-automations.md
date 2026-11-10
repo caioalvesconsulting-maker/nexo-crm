@@ -27,3 +27,9 @@ O script `scripts/check-cloud-automations.mjs` faz POST e leitura de confirmaç�
 As ações e o comprovante de execução são gravados atomicamente no D1 com comparação de revisão. Em conflito, a rotina relê o workspace e recalcula até três vezes. O marcador de SLA fica na tarefa, por regra e vencimento, e sobrevive à compactação do histórico. Um novo vencimento permite um novo alerta. Nenhuma tarefa é apagada pela rotina.
 
 Os testes cobrem execuções concorrentes, repetição, conflito persistente, isolamento de ambiente, regras pausadas, oportunidades encerradas, histórico de FUP e descarte de respostas antigas na sincronização. A ativação publicada deve ser validada pelo mesmo acesso de serviço usado pelo agendamento, seguida de leitura persistida.
+
+## Follow-up Infinito
+
+A mesma rotina horária agora processa os acompanhamentos. Ao completar 14 dias sem contato, cria uma tarefa individual por lead e data do último contato. Repetir a execução não duplica a tarefa; um novo contato inicia outro ciclo. À primeira execução a partir de 08:00 de Brasília, cria a lista do dia por operação e responsável com retornos de hoje, atrasados e 14+ dias, sem repetir pessoas na lista. A cadência horária já existente inclui 08:00; não há outro agendamento. Em caso de atraso do serviço, a lista é gerada na primeira execução bem-sucedida após esse horário.
+
+As notificações ficam no sino do CRM, e não são e-mails, WhatsApp nem notificações do sistema operacional. A contagem `actions` inclui tarefas e notificações novas do follow-up. Cada operação mantém seu marcador diário. As execuções feitas por gestores na interface respeitam apenas suas operações liberadas; o serviço privado do proprietário processa o workspace real.

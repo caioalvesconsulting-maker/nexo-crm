@@ -25,7 +25,8 @@ export async function runCloudAutomations(store:AutomationStore) {
     const state=upgradeState(JSON.parse(row.data) as State,row.owner_id);
     const actor:Actor={id:row.owner_id,name:'Automação na nuvem',role:'Administrador',isOwner:true,projects:state.projects,allLeads:true,finance:false,export:false};
     const result=mutateState(state,{type:'automation.run',payload:{}},actor);
-    const actions=result.rules.reduce((sum,r)=>sum+r.runs,0)-state.rules.reduce((sum,r)=>sum+r.runs,0);
+    const previousTasks=new Set(state.tasks.map(t=>t.id)),previousNotices=new Set(state.followupNotices.map(n=>n.id));
+    const actions=result.rules.reduce((sum,r)=>sum+r.runs,0)-state.rules.reduce((sum,r)=>sum+r.runs,0)+result.tasks.filter(t=>t.followupId&&!previousTasks.has(t.id)).length+result.followupNotices.filter(n=>!previousNotices.has(n.id)).length;
     const run={id:crypto.randomUUID(),at:new Date().toISOString()};
     result.cloudAutomation=run;
     if(await store.write(row.revision,result))return {run,actions,revision:row.revision+1};

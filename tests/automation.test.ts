@@ -51,3 +51,12 @@ test('troca de ambiente e respostas fora de ordem não substituem os dados atuai
   const guard=new SyncGuard(),demo=guard.start();guard.invalidate(true);const live=guard.start();assert.equal(guard.accept(demo,1000),false);assert.equal(guard.accept(live,0),true);
   const slow=guard.start(),fast=guard.start();assert.equal(guard.accept(fast,2),true);assert.equal(guard.accept(slow,3),false);
 });
+
+test('rotina na nuvem contabiliza e persiste ações do Follow-up Infinito sem repetir',async()=>{
+  let s=emptyState({userId:'owner',displayName:'Caio',email:'owner@example.com'});s.rules.forEach(r=>r.enabled=false);
+  s=apply(s,'followup.save',{project:'Meu projeto',name:'Retomar teste',ownerId:'owner',stop:'dm',objection:'Vai pensar',lastContact:'2020-01-01'});
+  const db=memory(s),first=await runCloudAutomations(db.store),saved=db.state();
+  assert.equal(saved.tasks.filter(t=>t.followupId).length,1);
+  assert.equal(first.actions,1+saved.followupNotices.length);
+  assert.equal((await runCloudAutomations(db.store)).actions,0);
+});

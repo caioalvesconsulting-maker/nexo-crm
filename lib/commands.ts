@@ -1,3 +1,5 @@
+import {applyLifecycle} from './lifecycle-commands';
+import {blankFollowup,canFollowup,ensureLifecycle,runFollowupAutomation,syncFollowupSale} from './lifecycle';
 import {upgradeState,ensureProject,defaultFunnels,assignExperiment,autoAssign} from './operations';
 import {AWARENESS,canProject,STAGES,uid,money,stamp,stageName,estimate,assert,clean,validDate,amount,accessible} from './crm';
 import type {State,Actor,Deal,Stage,Task,Meeting,Fee,Member,Rule,Feedback,Experiment,Funnel} from './crm';
@@ -14,7 +16,13 @@ export function mutateState(input:State,command:Command,actor:Actor,demo=false):
   function history(d:Deal,text:string){const a={id:uid(),at:now,actor:actor.name,text,project:d.project};d.history.unshift(a);d.history=d.history.slice(0,200);d.updatedAt=now;s.audit.unshift(a);}
   function task(d:Deal,title:string,due:string,key?:string){if(key&&s.tasks.some(t=>t.automationKey===key))return;s.tasks.unshift({id:uid(),project:d.project,title,dealId:d.id,ownerId:d.ownerId,due,priority:'Média',done:false,createdAt:now,automationKey:key});}
   function rules(event:string,d:Deal){for(const r of s.rules.filter(r=>r.enabled&&r.project===d.project&&r.event===event&&(!r.stage||r.stage===d.stage))){const due=new Date(Date.now()+r.hours*3600000).toISOString();if(r.action==='followup'&&!['won','lost','scheduled'].includes(d.stage)){d.stage='followup';d.followupAt=due;}task(d,r.name,due);r.runs++;s.logs.unshift({id:uid(),at:now,ruleId:r.id,dealId:d.id,text:`${r.name}: tarefa criada.`});}}
-  if(type==='lead.save'){
+  if(type==='followup.win'){
+    const f=s.followups.find(f=>f.id===p.id);assert(f&&canFollowup(f,actor)&&f.status==='active','Lead de follow-up indisponível.');assert(admin||actor.finance||actor.role==='Closer','Peça ao gestor ou closer para registrar a venda.');
+    let prepared=s,linked=f.dealId?s.deals.find(d=>d.id===f.dealId):undefined;if(linked)assert(accessible(linked,actor),'Sem acesso à oportunidade.');
+    if(!linked){prepared=mutateState(s,{type:'lead.save',payload:{project:f.project,name:f.name,phone:f.phone,source:f.stop==='dm'?'Instagram':'WhatsApp',ownerId:f.ownerId,reuseContact:true}},actor,demo);linked=prepared.deals.find(d=>!s.deals.some(old=>old.id===d.id))!;assert(linked,'Não foi possível preparar a venda.');prepared.followups.find(x=>x.id===f.id)!.dealId=linked.id;}
+    return mutateState(prepared,{type:'lead.move',payload:{...p,id:undefined,dealId:linked.id,stage:'won'}},actor,demo);
+  }
+  if(applyLifecycle(s,type,p,actor,now)){}else if(type==='lead.save'){
     const old=p.id?deal(p.id):null;const operation=project(p.project||old?.project||s.projects.find(x=>canProject(x,actor))||'');if(old)assert(operation===old.project,'A operação de uma oportunidade é fixa. Crie uma nova oportunidade no projeto de destino.');assert(clean(p.name).length>=2,'Informe o nome do lead.');
     let c=old?s.contacts.find(c=>c.id===old.contactId):p.contactId?s.contacts.find(c=>c.id===p.contactId):null;
     if(!c){const phone=clean(p.phone).replace(/\D/g,''),email=clean(p.email).toLowerCase(),ig=clean(p.instagram).replace(/^@/,'').toLowerCase();c=s.contacts.find(x=>x.project===operation&&((phone&&x.phone.replace(/\D/g,'')===phone)||(email&&x.email.toLowerCase()===email)||(ig&&x.instagram.replace(/^@/,'').toLowerCase()===ig)));if(c&&!p.reuseContact)throw new Error('Já existe um contato com esse telefone, e-mail ou Instagram. Marque “Usar contato existente” para criar outra oportunidade vinculada.');}
@@ -44,6 +52,11 @@ export function mutateState(input:State,command:Command,actor:Actor,demo=false):
         const costs=estimate(total,fee||null);s.sales.unshift({id:uid(),dealId:d.id,gross,discount,amount:total,installments,method:p.method,platform:fee?.platform||clean(p.platform)||'Sem plataforma',feeSnapshot:fee?{...fee}:null,estimatedFee:costs.fee,estimatedNet:costs.net,due:p.due,createdAt:now,receipts:[],status:'Ativa'});d.value=total;
       }
     }
+    if(to==='lost'){
+      const c=s.contacts.find(c=>c.id===d.contactId)!;let f=s.followups.find(f=>f.dealId===d.id&&f.status==='active');if(!f){f={...blankFollowup(d.project,d.ownerId,now),dealId:d.id,name:c.name,phone:c.phone};s.followups.unshift(f);}
+      if(p.followupStop||p.followupObjection||p.lastContact)applyLifecycle(s,'followup.save',{...f,stop:p.followupStop,objection:p.followupObjection,otherObjection:p.followupOther||'',lastContact:p.lastContact},actor,now);
+    }
+    if(to==='won')syncFollowupSale(s,d);
     const from=d.stage;d.stage=to;history(d,`Movido de ${stageName(from)} para ${stageName(to)}.${p.lossReason?` Motivo: ${p.lossReason}.`:''}${p.reason||p.notes?` ${clean(p.reason||p.notes,2000)}`:''}`);rules('stage_changed',d);
   }else if(type==='lead.note'){
     const d=deal();assert(clean(p.text),'Escreva uma anotação.');history(d,clean(p.text,5000));
@@ -91,7 +104,7 @@ export function mutateState(input:State,command:Command,actor:Actor,demo=false):
   }else if(type==='message.send'){
     const d=deal();assert(clean(p.text),'Escreva uma mensagem.');assert(demo||p.note||p.draft,'Conecte uma conta oficial antes de enviar mensagens. Você pode salvar um rascunho.');s.messages.push({id:uid(),dealId:d.id,channel:d.source,text:clean(p.text,5000),at:now,direction:p.note?'note':'out',status:p.note?'note':p.draft?'draft':'demo'});if(!p.draft)history(d,p.note?'Nota interna adicionada à conversa.':'Mensagem de demonstração adicionada.');
   }else if(type==='member.save'){
-    assert(clean(p.name)&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email),'Informe nome e e-mail válidos.');assert(['Administrador','Gestor','SDR','Closer'].includes(p.role),'Perfil inválido.');const old=s.members.find(x=>x.id===p.id);assert(!old||old.id!==s.ownerId||p.role==='Administrador','O proprietário mantém o acesso de administrador.');assert(!s.members.some(x=>x.email.toLowerCase()===p.email.toLowerCase()&&x.id!==p.id),'Este e-mail já está na equipe.');if(old?.id===actor.id)assert(p.role==='Administrador'&&p.active!==false,'Você não pode remover seu próprio acesso de administrador.');
+    assert(clean(p.name)&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email),'Informe nome e e-mail válidos.');assert(['Administrador','Gestor','SDR','Closer','Suporte/CS'].includes(p.role),'Perfil inválido.');const old=s.members.find(x=>x.id===p.id);assert(!old||old.id!==s.ownerId||p.role==='Administrador','O proprietário mantém o acesso de administrador.');assert(!s.members.some(x=>x.email.toLowerCase()===p.email.toLowerCase()&&x.id!==p.id),'Este e-mail já está na equipe.');if(old?.id===actor.id)assert(p.role==='Administrador'&&p.active!==false,'Você não pode remover seu próprio acesso de administrador.');
     const grants=Array.isArray(p.projects)?[...new Set(p.projects.map((v:unknown)=>clean(v)).filter(Boolean))] as string[]:[];assert(grants.every(x=>s.projects.includes(x)),'Operação inválida nas permissões.');assert(old?.id===s.ownerId||grants.length>0||p.active===false,'Libere ao menos uma operação para ativar esta pessoa.');const m:Member={id:old?.id||uid(),projects:old?.id===s.ownerId?[...s.projects]:grants,name:clean(p.name),email:clean(p.email).toLowerCase(),role:p.role,active:p.active!==false,allLeads:!!p.allLeads,finance:!!p.finance,export:!!p.export};if(old)Object.assign(old,m);else s.members.push(m);for(const t of s.teams)t.memberIds=t.memberIds.filter(id=>id!==m.id||(m.active&&(m.id===s.ownerId||m.projects?.includes(t.project))));
   }else if(type==='settings.save'){
     assert(clean(p.name),'Informe o nome do workspace.');assert(/^([01]\d|2[0-3]):[0-5]\d$/.test(p.workingStart)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(p.workingEnd)&&p.workingStart<p.workingEnd,'Expediente inválido.');s.settings={...s.settings,name:clean(p.name),workingStart:p.workingStart,workingEnd:p.workingEnd,slaHours:amount(p.slaHours,1,168)};if(Array.isArray(p.lossReasons)){const reasons=[...new Set(p.lossReasons.map((x:unknown)=>clean(x,100)).filter(Boolean))] as string[];assert(reasons.length>0,'Mantenha ao menos um motivo de perda.');s.lossReasons=reasons;}
@@ -131,6 +144,8 @@ export function mutateState(input:State,command:Command,actor:Actor,demo=false):
   }else if(type==='attachment.add'){
     const d=deal();assert(p.attachment&&clean(p.attachment.id),'Anexo inválido.');d.attachments.push(p.attachment);history(d,`Arquivo anexado: ${p.attachment.name}.`);
   }else throw new Error('Ação desconhecida.');
+  if(type==='project.add')ensureLifecycle(s);
+  if(type==='automation.run')runFollowupAutomation(s,now,s.projects.filter(p=>canProject(p,actor)));
   if(!['automation.run','lead.note','message.send'].includes(type))s.audit.unshift({id:uid(),at:now,actor:actor.name,project:p.project||s.deals.find(d=>d.id===p.dealId)?.project,text:`${type}: ${clean(p.name||p.title||p.dealId||p.id||'Configuração atualizada')}`});
   s.audit=s.audit.slice(0,500);s.logs=s.logs.slice(0,500);assert(s.deals.length<=5000&&JSON.stringify(s).length<4500000,'Limite deste workspace atingido. Exporte os dados e solicite expansão.');return s;
 }

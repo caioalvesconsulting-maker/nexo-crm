@@ -23,3 +23,20 @@ assert.equal((await fetch(base+'/api/automations/status?demo=1')).status,401);
 const automationStatus=await (await request('/api/automations/status?demo=1')).json();assert.deepEqual(automationStatus,{mode:'demo',scheduled:false,lastRun:null});
 assert.equal((await request('/api/automations/cloud',{method:'POST'})).status,503);
 console.log('PASS: identity, same-origin enforcement, persistence, optimistic concurrency, R2 upload/download, scoped Instagram status and disabled external events.');
+
+// Dedicated routes: identity, origin, draft fallback and private PDF storage.
+const current=await (await request('/api/crm?demo=1')).json();
+const createFollowup=await request('/api/crm?demo=1',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({type:'followup.save',revision:current.revision,payload:{project:current.state.projects[0],name:'Teste HTTP follow-up',ownerId:current.actor.id,stop:'dm',objection:'Vai pensar',lastContact:'2020-01-01'}})});
+assert.equal(createFollowup.status,200);const followState=await createFollowup.json(),followup=followState.state.followups[0];
+assert.equal((await fetch(base+'/api/followup/suggest?demo=1',{method:'POST',headers:{Origin:base},body:JSON.stringify({id:followup.id})})).status,401);
+assert.ok([400,403].includes((await request('/api/followup/suggest?demo=1',{method:'POST',headers:{Origin:'https://untrusted.invalid'},body:JSON.stringify({id:followup.id})})).status));
+const suggested=await request('/api/followup/suggest?demo=1',{method:'POST',headers:{Origin:base},body:JSON.stringify({id:followup.id})});assert.equal(suggested.status,200);const draft=await suggested.json();assert.equal(draft.mode,'template');assert.equal(draft.connected,false);assert.ok(draft.text.length>30);
+assert.equal((await request('/api/followup/suggest?demo=1',{method:'POST',headers:{Origin:base},body:JSON.stringify({id:'missing'})})).status,400);
+const lesson=followState.state.learning.lessons[0],invalidPdf=new FormData();invalidPdf.set('lessonId',lesson.id);invalidPdf.set('file',new File(['not a PDF'],'fake.pdf',{type:'application/pdf'}));
+assert.equal((await request('/api/training/files?demo=1',{method:'POST',headers:{Origin:base},body:invalidPdf})).status,400);
+const pdf=new FormData();pdf.set('lessonId',lesson.id);pdf.set('file',new File(['%PDF-1.4\n% Storage round-trip fixture\n%%EOF'],'teste-pdf.pdf',{type:'application/pdf'}));
+const pdfResponse=await request('/api/training/files?demo=1',{method:'POST',headers:{Origin:base},body:pdf});assert.equal(pdfResponse.status,200);const pdfSaved=await pdfResponse.json(),updatedLesson=pdfSaved.state.learning.lessons.find(l=>l.id===lesson.id);assert.equal(updatedLesson.version,lesson.version+1);
+assert.equal((await fetch(base+'/api/training/files?demo=1&id='+updatedLesson.file.id)).status,401);
+const pdfRead=await request('/api/training/files?demo=1&id='+updatedLesson.file.id);assert.equal(pdfRead.status,200);assert.equal(pdfRead.headers.get('content-type'),'application/pdf');assert.match(pdfRead.headers.get('content-disposition'),/attachment/);assert.match(await pdfRead.text(),/^%PDF-/);
+assert.equal((await request('/api/crm?demo=1',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({type:'learning.lesson.file',revision:pdfSaved.revision,payload:{lessonId:lesson.id,file:{id:'fake',name:'fake.pdf'}}})})).status,400);
+console.log('PASS: follow-up drafts, identity and origin checks, PDF validation, private storage, material versioning and rejection of fabricated file attachments.');
