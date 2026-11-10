@@ -19,9 +19,10 @@ const templates=[
 export function defaultFunnels(project:string):Funnel[]{return templates.map(([name,description,entry,qualification,nextStep],i)=>({id:`funnel:${encodeURIComponent(project)}:${i}`,project,name,description,entry,qualification,nextStep,active:true}));}
 export function ensureProject(s:State,project:string){s.projectDetails[project]||={description:'Operação comercial independente, com equipe e indicadores próprios.',stageNotes:structuredClone(DEFAULT_STAGES)};if(!s.funnels.some(f=>f.project===project))s.funnels.push(...defaultFunnels(project));}
 export function upgradeState(input:State,ownerId:string):State{
- const s=structuredClone(input);s.ownerId=ownerId;s.projectDetails||={};s.funnels||=[];s.experiments||=[];s.feedback||=[];
+ const s=structuredClone(input);s.ownerId=ownerId;s.projectDetails||={};s.funnels||=[];s.experiments||=[];s.feedback||=[];s.teams||=[];
  for(const p of s.projects)ensureProject(s,p);
  for(const m of s.members){m.projects=m.id===ownerId?[...s.projects]:(m.projects||[]).filter(p=>s.projects.includes(p));}
+ for(const t of s.teams)t.memberIds=t.memberIds.filter(id=>s.members.some(m=>m.id===id&&m.active&&(m.id===ownerId||m.projects?.includes(t.project))));
  for(const d of s.deals){d.awareness||='Não identificado';d.experimentAssignments||=[];d.funnelId||=s.funnels.find(f=>f.project===d.project&&f.name==='Direto / indicação / outros')?.id;
    const c=s.contacts.find(c=>c.id===d.contactId);if(c){if(c.project&&c.project!==d.project){const existing=s.contacts.find(x=>x.id===`${c.id}::${d.project}`);const copy=existing||{...c,id:`${c.id}::${d.project}`,project:d.project};if(!existing)s.contacts.push(copy);d.contactId=copy.id;}else c.project=d.project;}
  }
@@ -48,5 +49,5 @@ export function experimentStats(s:State,e:Experiment){
 // every record outside the visitor's explicit project memberships.
 export function scopeOperation(input:State,project:string):State{
  if(!project)return input;const s=structuredClone(input),ids=new Set(s.deals.filter(d=>d.project===project).map(d=>d.id));
- s.deals=s.deals.filter(d=>ids.has(d.id));s.contacts=s.contacts.filter(c=>s.deals.some(d=>d.contactId===c.id));s.tasks=s.tasks.filter(t=>t.project===project);s.meetings=s.meetings.filter(m=>ids.has(m.dealId));s.sales=s.sales.filter(x=>ids.has(x.dealId));s.messages=s.messages.filter(m=>ids.has(m.dealId));s.fees=s.fees.filter(f=>f.project===project);s.rules=s.rules.filter(r=>r.project===project);s.logs=s.logs.filter(l=>ids.has(l.dealId));s.funnels=s.funnels.filter(f=>f.project===project);s.experiments=s.experiments.filter(e=>e.project===project);s.feedback=s.feedback.filter(f=>f.project===project);s.audit=s.audit.filter(a=>a.project===project);return s;
+ s.deals=s.deals.filter(d=>ids.has(d.id));s.contacts=s.contacts.filter(c=>s.deals.some(d=>d.contactId===c.id));s.tasks=s.tasks.filter(t=>t.project===project);s.meetings=s.meetings.filter(m=>ids.has(m.dealId));s.sales=s.sales.filter(x=>ids.has(x.dealId));s.messages=s.messages.filter(m=>ids.has(m.dealId));s.fees=s.fees.filter(f=>f.project===project);s.rules=s.rules.filter(r=>r.project===project);s.logs=s.logs.filter(l=>ids.has(l.dealId));s.funnels=s.funnels.filter(f=>f.project===project);s.experiments=s.experiments.filter(e=>e.project===project);s.feedback=s.feedback.filter(f=>f.project===project);s.audit=s.audit.filter(a=>a.project===project);s.teams=(s.teams||[]).filter(t=>t.project===project);return s;
 }

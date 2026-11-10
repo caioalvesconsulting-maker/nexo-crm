@@ -22,7 +22,8 @@ export type Contact = { project?: string; id: string; name: string; company: str
 export type Activity = { project?: string; id: string; at: string; actor: string; text: string };
 export type Attachment = { id: string; name: string; size: number; type: string };
 export type Deal = { funnelId?: string; awareness?: string; wonAt?: string; experimentAssignments?: Assignment[]; id: string; contactId: string; stage: Stage; source: Channel; project: string; product: string; campaign: string; ownerId: string; sdrId: string; closerId: string; value: number; tags: string[]; notes: string; createdAt: string; updatedAt: string; followupAt?: string; lossReason?: string; history: Activity[]; attachments: Attachment[]; fields: Record<string,string> };
-export type Task = { project?: string; id: string; title: string; dealId: string; ownerId: string; due: string; priority: 'Alta' | 'Média' | 'Baixa'; done: boolean; createdAt: string; automationKey?: string; slaNotified?: Record<string,string> };
+export type SalesTeam = {id:string;project:string;name:string;description:string;memberIds:string[];active:boolean};
+export type Task = { description?:string; batchId?:string; completedAt?:string; project?: string; id: string; title: string; dealId: string; ownerId: string; due: string; priority: 'Alta' | 'Média' | 'Baixa'; done: boolean; createdAt: string; automationKey?: string; slaNotified?: Record<string,string> };
 export type Meeting = { createdAt?: string; id: string; title: string; dealId: string; ownerId: string; start: string; duration: number; notes: string; status: 'Agendada' | 'Realizada' | 'Cancelada'; link: string };
 export type Fee = { project?: string; id: string; platform: string; method: 'Pix' | 'Boleto' | 'Cartão'; percent: number; fixed: number; installments: number; anticipation: number; days: number; effectiveAt: string; active: boolean };
 export type Receipt = { id: string; gross: number; fee: number; net: number; at: string; note: string };
@@ -30,7 +31,7 @@ export type Sale = { id: string; dealId: string; gross: number; discount: number
 export type Message = { id: string; dealId: string; channel: string; text: string; at: string; direction: 'in' | 'out' | 'note'; status: 'received' | 'demo' | 'note' | 'draft' };
 export type Rule = { project?: string; id: string; name: string; description: string; event: 'lead_created' | 'stage_changed' | 'sla' | 'no_reply'; stage: string; action: 'task' | 'followup'; hours: number; enabled: boolean; runs: number };
 export type AutomationLog = { id: string; at: string; ruleId: string; dealId: string; text: string };
-export type State = { cloudAutomation?: {id:string;at:string}; schemaVersion: number; ownerId: string; projectDetails: Record<string,ProjectDetails>; funnels: Funnel[]; experiments: Experiment[]; feedback: Feedback[]; inboundIds?: string[]; contacts: Contact[]; deals: Deal[]; tasks: Task[]; meetings: Meeting[]; sales: Sale[]; fees: Fee[]; members: Member[]; messages: Message[]; rules: Rule[]; logs: AutomationLog[]; projects: string[]; lossReasons: string[]; audit: Activity[]; settings: { name: string; timezone: string; workingStart: string; workingEnd: string; slaHours: number }; integrations: Record<string, { account: string; notes: string; project?: string; channel?: string; instagramAccountId?: string; lastWebhookAt?: string }> };
+export type State = { teams:SalesTeam[]; cloudAutomation?: {id:string;at:string}; schemaVersion: number; ownerId: string; projectDetails: Record<string,ProjectDetails>; funnels: Funnel[]; experiments: Experiment[]; feedback: Feedback[]; inboundIds?: string[]; contacts: Contact[]; deals: Deal[]; tasks: Task[]; meetings: Meeting[]; sales: Sale[]; fees: Fee[]; members: Member[]; messages: Message[]; rules: Rule[]; logs: AutomationLog[]; projects: string[]; lossReasons: string[]; audit: Activity[]; settings: { name: string; timezone: string; workingStart: string; workingEnd: string; slaHours: number }; integrations: Record<string, { account: string; notes: string; project?: string; channel?: string; instagramAccountId?: string; lastWebhookAt?: string }> };
 export type Actor = { isOwner: boolean; projects: string[]; id: string; name: string; role: Role; allLeads: boolean; finance: boolean; export: boolean };
 export const uid = () => crypto.randomUUID();
 export const money = (cents: number) => (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -51,7 +52,7 @@ export function estimate(amount: number, fee: Fee | null) {
 }
 export function emptyState(user: {userId:string; displayName:string; email:string}): State {
   return {
-    schemaVersion:2,ownerId:user.userId,projectDetails:{},funnels:[],experiments:[],feedback:[],contacts:[], deals:[], tasks:[], meetings:[], sales:[], fees:[], messages:[], logs:[], audit:[],
+    schemaVersion:2,teams:[],ownerId:user.userId,projectDetails:{},funnels:[],experiments:[],feedback:[],contacts:[], deals:[], tasks:[], meetings:[], sales:[], fees:[], messages:[], logs:[], audit:[],
     members:[{ id:user.userId, name:user.displayName, email:user.email, role:'Administrador', active:true, allLeads:true, finance:true, export:true,projects:['Meu projeto'] }],
     projects:['Meu projeto'], lossReasons:['Preço', 'Momento inadequado', 'Sem resposta', 'Concorrente', 'Falta de interesse', 'Outro'],
     settings:{ name:'Meu workspace', timezone:'America/Sao_Paulo', workingStart:'09:00', workingEnd:'18:00', slaHours:4 }, integrations:{},
@@ -92,10 +93,11 @@ export function visibleState(s:State,a:Actor):State {
   const data=structuredClone(s),allowed=new Set(s.projects.filter(p=>canProject(p,a)));
   data.projects=data.projects.filter(p=>allowed.has(p));data.projectDetails=Object.fromEntries(Object.entries(data.projectDetails).filter(([p])=>allowed.has(p)));
   data.deals=data.deals.filter(d=>accessible(d,a)).map(d=>({...d,wonAt:s.sales.find(x=>x.dealId===d.id&&x.status==='Ativa')?.createdAt}));const ids=new Set(data.deals.map(d=>d.id)), contacts=new Set(data.deals.map(d=>d.contactId));
-  data.contacts=data.contacts.filter(c=>contacts.has(c.id));data.tasks=data.tasks.filter(t=>allowed.has(t.project||'')&&(ids.has(t.dealId)||(!t.dealId&&(a.isOwner||a.allLeads||t.ownerId===a.id))));data.meetings=data.meetings.filter(m=>ids.has(m.dealId));data.messages=data.messages.filter(m=>ids.has(m.dealId));
+  data.contacts=data.contacts.filter(c=>contacts.has(c.id));data.tasks=data.tasks.filter(t=>allowed.has(t.project||'')&&(!t.dealId||ids.has(t.dealId))&&(a.isOwner||['Gestor','Administrador'].includes(a.role)||t.ownerId===a.id));data.meetings=data.meetings.filter(m=>ids.has(m.dealId));data.messages=data.messages.filter(m=>ids.has(m.dealId));
   data.fees=data.fees.filter(f=>allowed.has(f.project||''));if(!a.finance&&!a.isOwner){data.sales=[];data.fees=[];}else data.sales=data.sales.filter(x=>ids.has(x.dealId));
   data.rules=data.rules.filter(r=>allowed.has(r.project||''));data.funnels=data.funnels.filter(f=>allowed.has(f.project));data.experiments=data.experiments.filter(e=>allowed.has(e.project));data.feedback=data.feedback.filter(f=>ids.has(f.dealId));
   data.members=data.members.filter(m=>a.isOwner||m.id===s.ownerId||m.id===a.id||(m.projects||[]).some(p=>allowed.has(p))).map(m=>({...m,projects:(m.projects||[]).filter(p=>allowed.has(p))}));
+  data.teams=(data.teams||[]).filter(t=>allowed.has(t.project)).map(t=>({...t,memberIds:t.memberIds.filter(id=>data.members.some(m=>m.id===id&&m.active&&(m.id===s.ownerId||m.projects?.includes(t.project))))}));
   data.integrations=Object.fromEntries(Object.entries(data.integrations).filter(([,v])=>allowed.has(v.project||'')));
   if(!a.isOwner){data.audit=[];data.logs=data.logs.filter(x=>ids.has(x.dealId));data.inboundIds=[];}
   return data;
