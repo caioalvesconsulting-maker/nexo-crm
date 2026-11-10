@@ -1,3 +1,4 @@
+import {ensureSuccess} from './success';
 import {ensureLifecycle} from './lifecycle';
 import {canProject,uid} from './crm';
 import type {State,Actor,Funnel,ProjectDetails,Experiment,Deal,Assignment} from './crm';
@@ -31,7 +32,7 @@ export function upgradeState(input:State,ownerId:string):State{
  s.fees=s.fees.flatMap(f=>f.project?[f]:s.projects.map((project,i)=>({...f,project,id:i===0?f.id:`${f.id}::${project}`})));
  s.rules=s.rules.flatMap(r=>r.project?[r]:s.projects.map((project,i)=>({...r,project,id:i===0?r.id:`${r.id}::${project}`,runs:i===0?r.runs:0})));
  s.integrations=Object.fromEntries(Object.entries(s.integrations).map(([key,v])=>{const project=v.project||s.projects[0],channel=v.channel||key;return[`${project}::${channel}`,{...v,project,channel}];}));
- ensureLifecycle(s);s.schemaVersion=2;return s;
+ ensureLifecycle(s);ensureSuccess(s);s.schemaVersion=2;return s;
 }
 export function assignExperiment(deal:Deal,experiment:Experiment,method:'random'|'manual'='random',variant?:'A'|'B'){
  deal.experimentAssignments||=[];if(deal.experimentAssignments.some(a=>a.experimentId===experiment.id))return;
@@ -50,5 +51,5 @@ export function experimentStats(s:State,e:Experiment){
 // every record outside the visitor's explicit project memberships.
 export function scopeOperation(input:State,project:string):State{
  if(!project)return input;const s=structuredClone(input),ids=new Set(s.deals.filter(d=>d.project===project).map(d=>d.id));
- s.deals=s.deals.filter(d=>ids.has(d.id));s.contacts=s.contacts.filter(c=>s.deals.some(d=>d.contactId===c.id));s.tasks=s.tasks.filter(t=>t.project===project);s.meetings=s.meetings.filter(m=>ids.has(m.dealId));s.sales=s.sales.filter(x=>ids.has(x.dealId));s.messages=s.messages.filter(m=>ids.has(m.dealId));s.fees=s.fees.filter(f=>f.project===project);s.rules=s.rules.filter(r=>r.project===project);s.logs=s.logs.filter(l=>ids.has(l.dealId));s.funnels=s.funnels.filter(f=>f.project===project);s.experiments=s.experiments.filter(e=>e.project===project);s.feedback=s.feedback.filter(f=>f.project===project);s.audit=s.audit.filter(a=>a.project===project);s.teams=(s.teams||[]).filter(t=>t.project===project);s.followups=s.followups.filter(f=>f.project===project);s.followupNotices=s.followupNotices.filter(n=>n.project===project);for(const key of Object.keys(s.learning) as (keyof State['learning'])[])s.learning[key]=(s.learning[key] as any[]).filter(x=>x.project===project) as any;s.operationMaps=Object.fromEntries(Object.entries(s.operationMaps).filter(([p])=>p===project));return s;
+ s.deals=s.deals.filter(d=>ids.has(d.id));s.contacts=s.contacts.filter(c=>s.deals.some(d=>d.contactId===c.id));s.tasks=s.tasks.filter(t=>t.project===project);s.meetings=s.meetings.filter(m=>ids.has(m.dealId));s.sales=s.sales.filter(x=>ids.has(x.dealId));s.messages=s.messages.filter(m=>ids.has(m.dealId));s.fees=s.fees.filter(f=>f.project===project);s.rules=s.rules.filter(r=>r.project===project);s.logs=s.logs.filter(l=>ids.has(l.dealId));s.funnels=s.funnels.filter(f=>f.project===project);s.experiments=s.experiments.filter(e=>e.project===project);s.feedback=s.feedback.filter(f=>f.project===project);s.audit=s.audit.filter(a=>a.project===project);s.teams=(s.teams||[]).filter(t=>t.project===project);s.followups=s.followups.filter(f=>f.project===project);s.followupNotices=s.followupNotices.filter(n=>n.project===project);for(const key of Object.keys(s.learning) as (keyof State['learning'])[])s.learning[key]=(s.learning[key] as any[]).filter(x=>x.project===project) as any;s.operationMaps=Object.fromEntries(Object.entries(s.operationMaps).filter(([p])=>p===project));s.success.cases=s.success.cases.filter(c=>c.project===project);s.success.notices=s.success.notices.filter(n=>n.project===project);s.success.order=Object.fromEntries(Object.entries(s.success.order).filter(([p])=>p===project));s.success.settings=Object.fromEntries(Object.entries(s.success.settings).filter(([p])=>p===project));return s;
 }

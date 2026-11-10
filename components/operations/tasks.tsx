@@ -5,7 +5,7 @@ import {initials,stamp} from '@/lib/crm';
 import type {State,Actor,Task,Member,SalesTeam} from '@/lib/crm';
 import {isTaskManager} from '@/lib/task-assignment';
 type Mutate=(type:string,payload:Record<string,any>)=>Promise<State|null>;
-const roles=['Administrador','Gestor','SDR','Closer','Suporte/CS'];
+const roles=['Administrador','Gestor','SDR','Closer','Suporte/CS','Editor'];
 export function RecipientPicker({members,teams,selected,onChange,single=false,purpose='task'}:{members:Member[];teams:SalesTeam[];selected:string[];onChange:(ids:string[])=>void;single?:boolean;purpose?:'task'|'team'}){
  const [query,setQuery]=useState(''),[role,setRole]=useState(''),[team,setTeam]=useState('');
  const chosen=teams.find(t=>t.id===team),visible=members.filter(m=>(!role||m.role===role)&&(!chosen||chosen.memberIds.includes(m.id))&&m.name.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')));

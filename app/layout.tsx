@@ -4,6 +4,7 @@ import "./orbital.css";
 import "./growth.css";
 import "./operations.css";
 import "./engagement.css";
+import "./success.css";
 
 export const metadata: Metadata = {
   title: "Nexo CRM · Seu próximo negócio começa aqui",
