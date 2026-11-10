@@ -23,3 +23,13 @@ A geração real não foi ativada nem testada com um provedor: faltam a conexão
 ## Validação
 
 Testes de domínio cobrem acesso por operação e pessoa, datas de Brasília, consciência, gargalo combinado, venda atômica, perda e migração, rotina sem duplicação, quiz calculado no servidor, mapas e conflito de versão. Testes HTTP cobrem autenticação, origem, persistência, rascunho local e upload/download privado de PDF. Conferência visual nas três telas em desktop e celular, incluindo modo claro/escuro e arraste real das caixas.
+
+## Entrada automática a partir de FUP
+
+Arrastar ou escolher FUP no pipeline grava a etapa e inclui o lead no Follow-up Infinito na mesma transação. Não exige um formulário nem uma data de retorno para entrar; o contexto pode ser completado depois. Uma data de retorno enviada explicitamente ainda precisa ser futura e gera a tarefa existente.
+
+O cadastro conserva operação, responsável do lead, nome, telefone e contexto. Reentradas reutilizam o acompanhamento existente e reativam cadastros encerrados sem apagar notas, qualificação ou atribuição já ajustada. Apenas uma oportunidade vinculada é acompanhada; não há fusão de pessoas entre operações. Sair de FUP não apaga o acompanhamento, e registrar a venda continua encerrando-o como comprado.
+
+Leads que já estavam em FUP são incluídos ao carregar a versão atual, somente se ainda não tiverem acompanhamento. Recarregar não reabre um acompanhamento encerrado. Regras que movem para FUP também fazem a inclusão. O canal conhecido ou uma call realizada ajudam a indicar onde parou; outros canais ficam para completar. A última mensagem recebida fornece a data do último contato quando disponível. Sem evidência, a data e a objeção ficam vazias: arrastar um card não significa ter falado com o lead.
+
+A inclusão não envia mensagens externas nem altera os processos personalizados da equipe. Testes cobrem entrada sem data, prazo opcional, reentrada, migração, autor, permissões, preservação de qualificação e disparos internos.

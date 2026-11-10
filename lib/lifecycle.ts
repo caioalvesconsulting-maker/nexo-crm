@@ -25,6 +25,27 @@ export const canManageFollowup=(a:Actor)=>a.isOwner||['Administrador','Gestor'].
 export const canFollowup=(f:Followup,a:Actor)=>canProject(f.project,a)&&(canManageFollowup(a)||f.ownerId===a.id);
 export function followupIncomplete(f:Followup){return !f.stop||!f.objection||!validDay(f.lastContact)||(f.objection==='Outra'&&!f.otherObjection);}
 export function blankFollowup(project:string,ownerId:string,now=new Date().toISOString()):Followup{return{id:uid(),project,dealId:'',name:'',phone:'',ownerId,stop:'',objection:'',otherObjection:'',knowsChannel:false,watchedYoutube:false,receivedGift:false,boughtEntry:false,hasBudget:false,lastContact:'',returnDate:'',status:'active',createdAt:now,updatedAt:now,notes:[]};}
+// Entering FUP is atomic with the pipeline move. Reuse the opportunity's record;
+// moving a card is not evidence that a conversation happened today.
+export function syncPipelineFollowup(s:State,d:Deal,now=new Date().toISOString(),options:{enter?:boolean;actor?:Pick<Actor,'id'|'name'>;context?:string;returnAt?:string}={}){
+ const contact=s.contacts.find(c=>c.id===d.contactId&&c.project===d.project);if(!contact)return;
+ const linked=s.followups.filter(f=>f.dealId===d.id&&f.project===d.project);
+ let f=linked.find(f=>f.status==='active')||linked.slice().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0];
+ if(f&&!options.enter){if(f.status==='active'&&options.returnAt&&Number.isFinite(Date.parse(options.returnAt))){f.returnDate=brazilDate(options.returnAt);f.updatedAt=now;}return f;}
+ if(!f){
+  const received=s.messages.filter(m=>m.dealId===d.id&&m.direction==='in'&&m.status==='received'&&Number.isFinite(Date.parse(m.at))&&Date.parse(m.at)<=Date.parse(now)).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
+  const channel=received?.channel||d.source;
+  const called=s.meetings.some(m=>m.dealId===d.id&&m.status==='Realizada');
+  f={...blankFollowup(d.project,d.ownerId,now),id:`followup:${d.id}`,dealId:d.id,name:contact.name,phone:contact.phone,stop:called?'call':channel==='Instagram'?'dm':channel==='WhatsApp'?'whatsapp':'',lastContact:received?brazilDate(received.at):''};
+  if(d.notes)f.notes.push({id:uid(),text:`Contexto do pipeline: ${d.notes}`,authorId:'system',author:'Sistema',at:now});
+  s.followups.unshift(f);
+ }
+ if(options.enter){f.status='active';f.name=contact.name;f.phone=contact.phone;f.updatedAt=now;}
+ const returnAt=options.returnAt||(!f.returnDate?d.followupAt:undefined);
+ if(returnAt&&Number.isFinite(Date.parse(returnAt)))f.returnDate=brazilDate(returnAt);
+ f.notes.unshift({id:uid(),text:`${options.enter?'Entrada em FUP pelo pipeline.':'Incluído a partir da etapa FUP do pipeline.'}${options.context?` ${options.context}`:''}`,authorId:options.actor?.id||'system',author:options.actor?.name||'Sistema',at:now});
+ return f;
+}
 export function followupSummary(rows:Followup[],now:Date|string=new Date()){
  const today=brazilDate(now),active=rows.filter(f=>f.status==='active'),red=active.filter(f=>(daysWithoutContact(f,now)??0)>=14),due=active.filter(f=>f.returnDate===today),late=active.filter(f=>f.returnDate&&f.returnDate<today);
  const group=(key:(f:Followup)=>string)=>{const m=new Map<string,number>();for(const f of active){const k=key(f);m.set(k,(m.get(k)||0)+1);}return [...m].map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));};
@@ -47,6 +68,7 @@ export function ensureLifecycle(s:State){
  }
  // Existing lost opportunities enter a pending queue: never invent contact dates or objections.
  for(const d of s.deals.filter(d=>d.stage==='lost'))if(!s.followups.some(f=>f.dealId===d.id)){const c=s.contacts.find(c=>c.id===d.contactId);if(c)s.followups.push({...blankFollowup(d.project,d.ownerId,d.updatedAt),id:`followup:${d.id}`,dealId:d.id,name:c.name,phone:c.phone});}
+ for(const d of s.deals.filter(d=>d.stage==='followup'))syncPipelineFollowup(s,d);
 }
 export function runFollowupAutomation(s:State,now:Date|string=new Date(),allowedProjects=s.projects){
  const date=brazilDate(now),hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:'America/Sao_Paulo',hour:'2-digit',hourCycle:'h23'}).format(new Date(now))),at=new Date(now).toISOString();

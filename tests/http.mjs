@@ -57,3 +57,22 @@ assert.equal((await successCommand('file',{id:scActive.id,file:{id:'forged',name
 assert.equal((await successCommand('complete',{id:scActive.id,step:scActive.proofs.length+1,data:{}})).status,400);
 const sp=new FormData();sp.set('caseId',scActive.id);sp.set('kind','photo');sp.set('step',String(scActive.proofs.length));sp.set('file',new File([Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jWZkAAAAASUVORK5CYII=','base64')],'foto-teste.png',{type:'image/png'}));const spu=await request('/api/success/files?demo=1',{method:'POST',headers:{Origin:base},body:sp});assert.equal(spu.status,200);const spr=await spu.json(),spg=await request('/api/success/files?demo=1&id='+spr.fileId);assert.equal(spg.headers.get('content-type'),'image/png');assert.match(spg.headers.get('content-disposition'),/inline/);
 console.log('PASS: Success case persistence, active queue, private evidence/photo uploads, authentication, photo validation and rejection of forged files/skipped steps.');
+
+// Moving an opportunity to FUP must persist both records atomically, without a date dialog.
+let pipelineSnapshot=await(await request('/api/crm?demo=1')).json();
+const pipelineMove=async(type,payload)=>{
+ const response=await request('/api/crm?demo=1',{method:'POST',headers:{Origin:base,'Content-Type':'application/json'},body:JSON.stringify({type,payload,revision:pipelineSnapshot.revision})});
+ assert.equal(response.status,200);pipelineSnapshot=await response.json();return pipelineSnapshot;
+};
+await pipelineMove('lead.save',{name:'FUP automático · teste',project:pipelineSnapshot.state.projects[0],ownerId:pipelineSnapshot.actor.id,source:'Instagram',phone:'11987650000',notes:'Contexto para o próximo contato.'});
+const pipelineId=pipelineSnapshot.state.deals[0].id;
+await pipelineMove('lead.move',{dealId:pipelineId,stage:'followup'});
+const linkedFollowup=pipelineSnapshot.state.followups.find(f=>f.dealId===pipelineId);
+assert.ok(linkedFollowup);assert.equal(linkedFollowup.status,'active');assert.equal(linkedFollowup.lastContact,'');assert.equal(linkedFollowup.ownerId,pipelineSnapshot.actor.id);
+await pipelineMove('lead.move',{dealId:pipelineId,stage:'booking'});
+await pipelineMove('lead.move',{dealId:pipelineId,stage:'followup'});
+const pipelineReload=await(await request('/api/crm?demo=1')).json();
+assert.equal(pipelineReload.state.deals.find(d=>d.id===pipelineId).stage,'followup');
+assert.equal(pipelineReload.state.followups.filter(f=>f.dealId===pipelineId).length,1);
+assert.equal(pipelineReload.state.followups.find(f=>f.dealId===pipelineId).id,linkedFollowup.id);
+console.log('PASS: pipeline FUP entry, persistent follow-up, responsible person and duplicate-free reentry.');
