@@ -44,3 +44,11 @@ O título e as ações do dashboard agora ficam no cabeçalho. Filtros, aviso de
 Conferência visual em 1275×718 e 1410×740: os cinco indicadores e os dois painéis de pizza completos aparecem sem rolagem vertical inicial, com os filtros adicionais recolhidos e três projetos de exemplo. Em 1410×740, os painéis terminam em aproximadamente 701 px. Mais projetos ou filtros expandidos podem aumentar a altura de conteúdo.
 
 Revisão em 390×844 nos temas claro/escuro, sem transbordamento horizontal. Testados abrir/recolher Mais filtros e abrir/cancelar Criar tarefa no novo cabeçalho. Preferência de tema e tamanho de viewport restaurados após QA. TypeScript e build de produção verificados no fluxo de publicação.
+
+## Calendário de período — 12/11/2026
+
+O campo exibe `dd/mm/aa - dd/mm/aa`. O calendário flutua sobre o conteúdo, com dois meses consecutivos no desktop, semanas iniciando no domingo e nomes em português. A primeira data inicia uma seleção; a segunda aplica o intervalo. Datas em ordem inversa são normalizadas e dois cliques no mesmo dia selecionam um único dia. Escape, clique fora e saída por teclado descartam uma seleção incompleta. Atalhos de 7, 30, 90 dias e todo o período ficam dentro do calendário.
+
+Os indicadores e o gráfico de evolução usam os mesmos dias completos no horário de Brasília; o gráfico acompanha o intervalo selecionado, agrupando períodos acima de 90 dias por mês. Três testes cobrem os limites UTC/Brasília, milissegundos finais, virada de ano, dia único e extremidades dos agrupamentos. Suíte: 81 testes aprovados.
+
+Navegador local: seleção entre meses, ordem invertida, dia único, navegação, Escape, cancelamento por clique fora e atalho de 30 dias verificados. Desktop 1275×718 preserva o layout compacto; 390×844 e 360×800 mostram um mês sem corte horizontal. Viewport restaurado após a conferência.

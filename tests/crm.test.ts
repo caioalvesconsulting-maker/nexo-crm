@@ -1,5 +1,31 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {businessDay,periodRange,withinPeriod,periodBuckets} from '../lib/period';
+
+test('período inclui o dia inteiro em Brasília, inclusive milissegundos finais',()=>{
+ const filter={period:'custom',from:'2026-11-01',to:'2026-11-11'};
+ assert.equal(withinPeriod('2026-11-01T02:59:59.999Z',filter),false);
+ assert.equal(withinPeriod('2026-11-01T03:00:00Z',filter),true);
+ assert.equal(withinPeriod('2026-11-12T02:59:59.999Z',filter),true);
+ assert.equal(withinPeriod('2026-11-12T03:00:00Z',filter),false);
+ assert.equal(withinPeriod('2026-11-11T23:59:59.999-03:00',filter),true);
+ assert.equal(withinPeriod('invalid',filter),false);
+});
+test('atalhos mostram exatamente os dias filtrados e atravessam a virada do ano',()=>{
+ const now=new Date('2026-01-02T01:00:00Z'),filter={period:'7',from:'',to:''};
+ assert.equal(businessDay(now),'2026-01-01');
+ assert.deepEqual(periodRange(filter,now),{from:'2025-12-26',to:'2026-01-01'});
+ assert.equal(withinPeriod('2025-12-26T03:00:00Z',filter,now),true);
+ assert.equal(withinPeriod('2026-01-02T03:00:00Z',filter,now),false);
+ assert.equal(withinPeriod('2001-01-01T03:00:00Z',{period:'all',from:'',to:''}),true);
+});
+test('gráfico respeita dia único e intervalos longos sem perder as extremidades',()=>{
+ assert.deepEqual(periodBuckets({period:'custom',from:'2026-11-11',to:'2026-11-11'},''),[{from:'2026-11-11',to:'2026-11-11',label:'11/11'}]);
+ const buckets=periodBuckets({period:'custom',from:'2025-12-20',to:'2026-04-02'},'');
+ assert.equal(buckets.length,5);
+ assert.deepEqual(buckets[0],{from:'2025-12-20',to:'2025-12-31',label:'12/25'});
+ assert.deepEqual(buckets.at(-1),{from:'2026-04-01',to:'2026-04-02',label:'04/26'});
+});
 import {emptyState,demoState,estimate,visibleState,saleStatus} from '../lib/crm';
 import type {Actor,State} from '../lib/crm';
 import {upgradeState,experimentStats} from '../lib/operations';

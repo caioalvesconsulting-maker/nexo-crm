@@ -1,0 +1,43 @@
+.date-range-picker{--blue:#7da9d1;position:relative;min-width:0}
+.date-range-trigger{display:flex;align-items:center;gap:9px;width:100%;min-height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--secondary);font-size:11px;text-align:left;white-space:nowrap}
+.date-range-trigger svg{flex-shrink:0;color:var(--muted)}
+.date-range-trigger[aria-expanded=true]{background:color-mix(in srgb,var(--blue) 15%,var(--panel));color:var(--blue);border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
+.date-range-trigger[aria-expanded=true] svg{color:var(--blue)}
+.date-range-popover{position:absolute;top:calc(100% + 5px);left:0;z-index:40;width:558px;max-width:calc(100vw - 56px);padding:12px;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:0 16px 36px #0005;color:var(--text)}
+.date-range-popover .rdp-root{position:relative;width:100%}
+.date-range-popover .rdp-months{display:flex;gap:16px;position:relative}
+.date-range-popover .rdp-month{flex:1;min-width:0}
+.date-range-popover .rdp-month_caption{display:flex;align-items:center;justify-content:center;height:32px;margin-bottom:10px;font-size:14px;font-weight:550}
+.date-range-popover .rdp-nav{position:absolute;inset:0 0 auto;height:32px;display:flex;justify-content:space-between;pointer-events:none}
+.date-range-popover .rdp-button_previous,.date-range-popover .rdp-button_next{pointer-events:auto;display:grid;place-items:center;width:28px;height:28px;padding:0;background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--muted)}
+.date-range-popover .rdp-chevron{width:16px;height:16px;fill:currentColor}
+.date-range-popover .rdp-month_grid{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0 6px;margin:0}
+.date-range-popover thead,.date-range-popover tr,.date-range-popover tr:hover{background:transparent}
+.date-range-popover .rdp-weekday{padding:0 0 4px;border:0;background:none;text-align:center;color:var(--muted);font-size:12px;font-weight:400}
+.date-range-popover .rdp-day{height:34px;padding:0;border:0;text-align:center;color:var(--secondary);font-size:13px}
+.date-range-popover .rdp-day_button{width:100%;height:34px;display:grid;place-items:center;padding:0;border:1px solid transparent;border-radius:5px;color:inherit;background:transparent;font:inherit}
+.date-range-popover .rdp-outside{color:var(--muted)}
+.date-range-popover .rdp-range_middle{background:color-mix(in srgb,var(--blue) 15%,var(--panel));color:var(--blue)}
+.date-range-popover .rdp-range_start{background:linear-gradient(to right,transparent 50%,color-mix(in srgb,var(--blue) 15%,var(--panel)) 50%)}
+.date-range-popover .rdp-range_end{background:linear-gradient(to right,color-mix(in srgb,var(--blue) 15%,var(--panel)) 50%,transparent 50%)}
+.date-range-popover .rdp-range_start.rdp-range_end{background:transparent}
+.date-range-popover .rdp-range_start .rdp-day_button,.date-range-popover .rdp-range_end .rdp-day_button{background:var(--blue);color:#0c1530;font-weight:600}
+.date-range-popover .rdp-day:first-child{border-radius:5px 0 0 5px}
+.date-range-popover .rdp-day:last-child{border-radius:0 5px 5px 0}
+.date-range-popover .rdp-today:not(.rdp-selected) .rdp-day_button{box-shadow:inset 0 0 0 1px var(--line);color:var(--blue)}
+.date-range-popover button:hover{filter:brightness(1.2);background-color:color-mix(in srgb,var(--blue) 20%,transparent)}
+.date-range-popover button:focus-visible,.date-range-trigger:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.date-range-footer{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding-top:10px;border-top:1px solid var(--line)}
+.date-range-footer>span{font-size:10px;color:var(--muted)}
+.date-range-presets{display:flex;gap:6px;flex-wrap:wrap}
+.date-range-presets button{padding:5px 9px;border-radius:5px;background:var(--input);font-size:10px;color:var(--secondary)}
+@media(min-width:1700px){.date-range-trigger{font-size:12px}}
+@media(max-width:760px){
+ .date-range-trigger{min-height:40px;font-size:10px;gap:5px;padding:0 7px}
+ .date-range-trigger svg{width:14px;height:14px}
+ .date-range-popover{width:310px}
+ .date-range-popover .rdp-day,.date-range-popover .rdp-day_button{height:38px}
+}
+
+.light .date-range-picker{--blue:#39719f}
+@media(max-width:380px){.overview-filter:has(.date-range-picker){grid-column:1/-1}}
