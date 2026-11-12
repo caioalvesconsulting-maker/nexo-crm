@@ -35,3 +35,12 @@ Validação responsiva feita com tamanhos de viewport no navegador; não é test
 - Gráficos de rosca de receita e caixa por projeto logo abaixo dos indicadores, com valores, participação e total. Projetos sem movimentação aparecem sem fatia; ausência completa de movimento apresenta anel neutro.
 - Receita usa a data da venda ativa. Caixa usa a data de cada recebimento confirmado, inclusive de vendas anteriores. Vendas canceladas não entram. Um teste adicional valida conciliação por projeto, recebimentos parciais e isolamento do projeto selecionado: 21 testes aprovados no total.
 - Testes de navegador: filtro por projeto, período personalizado sem registros, limpeza dos filtros e tamanhos de 320, 390, 768, 1024 e 1440 px. Valores da operação mantidos, sem números fictícios inseridos em dados reais.
+
+
+## Visão geral compacta — 11/11/2026
+
+O título e as ações do dashboard agora ficam no cabeçalho. Filtros, aviso demonstrativo e cinco indicadores usam menos altura; os dois gráficos por projeto mantêm as legendas ao lado no desktop. Alteração apenas de apresentação, sem mudança nos cálculos, dados ou permissões.
+
+Conferência visual em 1275×718 e 1410×740: os cinco indicadores e os dois painéis de pizza completos aparecem sem rolagem vertical inicial, com os filtros adicionais recolhidos e três projetos de exemplo. Em 1410×740, os painéis terminam em aproximadamente 701 px. Mais projetos ou filtros expandidos podem aumentar a altura de conteúdo.
+
+Revisão em 390×844 nos temas claro/escuro, sem transbordamento horizontal. Testados abrir/recolher Mais filtros e abrir/cancelar Criar tarefa no novo cabeçalho. Preferência de tema e tamanho de viewport restaurados após QA. TypeScript e build de produção verificados no fluxo de publicação.
